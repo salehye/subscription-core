@@ -1,6 +1,6 @@
 ---
 name: subscription-core
-description: 'Laravel subscription management package with plans, features, multi-tenancy, usage tracking, billing cycles, events, and Artisan commands. Use when working with subscriptions, plans, features, subscriber billing, or SaaS metering.'
+description: "Laravel subscription management package with plans, features, multi-tenancy, usage tracking, billing cycles, events, and Artisan commands. Use when working with subscriptions, plans, features, subscriber billing, or SaaS metering."
 ---
 
 # Subscription Core
@@ -31,29 +31,29 @@ php artisan migrate
 
 ### Models (`src/Models/`)
 
-| Model | Description |
-|-------|-------------|
-| `Plan` | Subscription plans with billing cycle, price, trial days, soft deletes |
-| `Feature` | Features with type: `toggle`, `consumable`, `limit` |
-| `Subscription` | Polymorphic subscriber subscriptions (primary + addon), supports multi-tenancy |
-| `SubscriptionUsage` | Tracks consumable feature usage per subscription |
+| Model               | Description                                                                    |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `Plan`              | Subscription plans with billing cycle, price, trial days, soft deletes         |
+| `Feature`           | Features with type: `toggle`, `consumable`, `limit`                            |
+| `Subscription`      | Polymorphic subscriber subscriptions (primary + addon), supports multi-tenancy |
+| `SubscriptionUsage` | Tracks consumable feature usage per subscription                               |
 
 ### Enums (`src/Enums/`)
 
-| Enum | Values |
-|------|--------|
-| `BillingCycle` | `monthly` (30d), `yearly` (365d), `lifetime` (36500d) |
-| `FeatureType` | `toggle` (on/off), `consumable` (usage-based), `limit` (dynamic check) |
-| `SubscriptionStatus` | `active`, `canceled`, `expired`, `suspended`, `paused`, `pending` |
+| Enum                 | Values                                                                 |
+| -------------------- | ---------------------------------------------------------------------- |
+| `BillingCycle`       | `monthly` (30d), `yearly` (365d), `lifetime` (36500d)                  |
+| `FeatureType`        | `toggle` (on/off), `consumable` (usage-based), `limit` (dynamic check) |
+| `SubscriptionStatus` | `active`, `canceled`, `expired`, `suspended`, `paused`, `pending`      |
 
 ### Services (`src/Services/`)
 
-| Service | Purpose |
-|---------|---------|
+| Service                   | Purpose                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------- |
 | `SubscriptionManagerImpl` | Core operations: subscribe, cancel, renew, switchPlan, pause, resume, attachAddon |
-| `FeatureGuard` | Check feature access, consume, get remaining/limit/usage |
-| `UsageTracker` | Track and get/reset consumable usage records |
-| `PricingCalculator` | Calculate prorated prices, trial periods, renewal costs |
+| `FeatureGuard`            | Check feature access, consume, get remaining/limit/usage                          |
+| `UsageTracker`            | Track and get/reset consumable usage records                                      |
+| `PricingCalculator`       | Calculate prorated prices, trial periods, renewal costs                           |
 
 ### Artisan Commands
 
@@ -161,15 +161,15 @@ Route::middleware('subscription.feature:premium,redirect')->group(function () {}
 
 ## Events (`src/Events/`)
 
-| Event | Fires When |
-|-------|-----------|
-| `SubscriptionStarted` | Subscription created or renewed |
-| `SubscriptionRenewed` | Subscription renewed |
-| `SubscriptionCancelled` | Subscription cancelled |
-| `PlanChanged` | Subscription switches plan |
-| `FeatureConsumed` | Consumable feature used |
-| `FeatureLimitReached` | Feature limit hit |
-| `SubscriptionExpired` | Subscription expires |
+| Event                   | Fires When                      |
+| ----------------------- | ------------------------------- |
+| `SubscriptionStarted`   | Subscription created or renewed |
+| `SubscriptionRenewed`   | Subscription renewed            |
+| `SubscriptionCancelled` | Subscription cancelled          |
+| `PlanChanged`           | Subscription switches plan      |
+| `FeatureConsumed`       | Consumable feature used         |
+| `FeatureLimitReached`   | Feature limit hit               |
+| `SubscriptionExpired`   | Subscription expires            |
 
 ## Architecture
 
@@ -214,13 +214,13 @@ Multi-tenancy config:
 
 ## Contracts (`src/Contracts/`)
 
-| Contract | Purpose |
-|----------|---------|
+| Contract              | Purpose                                |
+| --------------------- | -------------------------------------- |
 | `SubscriptionManager` | Core subscription operations interface |
-| `FeatureResolver` | Feature value resolution interface |
-| `PlanRepository` | Plan storage interface |
-| `TenantResolver` | Multi-tenancy tenant resolution |
-| `HasSubscriptions` | Subscriber contract |
+| `FeatureResolver`     | Feature value resolution interface     |
+| `PlanRepository`      | Plan storage interface                 |
+| `TenantResolver`      | Multi-tenancy tenant resolution        |
+| `HasSubscriptions`    | Subscriber contract                    |
 
 ## Testing
 
