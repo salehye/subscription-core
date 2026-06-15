@@ -320,5 +320,5 @@ The MIT License (MIT). See [LICENSE](LICENSE) for more information.
 
 ## Credits
 
-- [Saleh Youssef](https://github.com/salehye)
+- [Saleh Al-Sanabani](https://github.com/salehye)
 - [All Contributors](https://github.com/salehye/subscription-core/graphs/contributors)
