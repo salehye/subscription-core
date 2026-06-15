@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Salehye\Subscription\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Salehye\Subscription\Database\Factories\SubscriptionFactory;
 
 /**
  * @property int $id
@@ -20,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class SubscriptionUsage extends Model
 {
+    use HasFactory;
+
     protected $table = 'subscription_usage';
 
     protected $fillable = [

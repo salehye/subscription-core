@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Salehye\Subscription\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Salehye\Subscription\Enums\FeatureType;
+use Salehye\Subscription\Database\Factories\FeatureFactory;
 
 /**
  * @property int $id
@@ -22,7 +24,13 @@ use Salehye\Subscription\Enums\FeatureType;
  */
 class Feature extends Model
 {
+    use HasFactory;
     use SoftDeletes;
+
+    protected static function newFactory(): FeatureFactory
+    {
+        return FeatureFactory::new();
+    }
 
     protected $fillable = [
         'name',

@@ -13,6 +13,8 @@ use Salehye\Subscription\Enums\SubscriptionStatus;
 use Salehye\Subscription\Events\PlanChanged;
 use Salehye\Subscription\Events\SubscriptionCancelled;
 use Salehye\Subscription\Events\SubscriptionExpired;
+use Salehye\Subscription\Events\SubscriptionPaused;
+use Salehye\Subscription\Events\SubscriptionResumed;
 use Salehye\Subscription\Events\SubscriptionStarted;
 use Salehye\Subscription\Exceptions\InvalidPlanException;
 use Salehye\Subscription\Models\Plan;
@@ -213,18 +215,26 @@ class SubscriptionManagerImpl implements SubscriptionManager
     public function pause(Subscription $subscription): Subscription
     {
         return DB::transaction(function () use ($subscription) {
-            return $this->subscriptionRepository->update($subscription, [
+            $subscription = $this->subscriptionRepository->update($subscription, [
                 'status' => SubscriptionStatus::Paused->value,
             ]);
+
+            event(new SubscriptionPaused($subscription));
+
+            return $subscription;
         });
     }
 
     public function resume(Subscription $subscription): Subscription
     {
         return DB::transaction(function () use ($subscription) {
-            return $this->subscriptionRepository->update($subscription, [
+            $subscription = $this->subscriptionRepository->update($subscription, [
                 'status' => SubscriptionStatus::Active->value,
             ]);
+
+            event(new SubscriptionResumed($subscription));
+
+            return $subscription;
         });
     }
 

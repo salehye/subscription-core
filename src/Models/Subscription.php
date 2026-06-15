@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Salehye\Subscription\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Salehye\Subscription\Enums\SubscriptionStatus;
+use Salehye\Subscription\Database\Factories\SubscriptionFactory;
 
 /**
  * @property int $id
@@ -31,6 +35,14 @@ use Salehye\Subscription\Enums\SubscriptionStatus;
  */
 class Subscription extends Model
 {
+    use HasFactory;
+    use Prunable;
+
+    protected static function newFactory(): SubscriptionFactory
+    {
+        return SubscriptionFactory::new();
+    }
+
     protected $fillable = [
         'subscriber_type',
         'subscriber_id',
@@ -117,6 +129,11 @@ class Subscription extends Model
             && $this->ends_at->copy()->addDays($graceDays)->isFuture();
     }
 
+    public function isPaused(): bool
+    {
+        return $this->status === SubscriptionStatus::Paused->value;
+    }
+
     public function isCanceled(): bool
     {
         return $this->status === SubscriptionStatus::Canceled->value;
@@ -179,5 +196,21 @@ class Subscription extends Model
         return $query->where('status', SubscriptionStatus::Active->value)
             ->whereNotNull('ends_at')
             ->where('ends_at', '<=', Carbon::now()->addDays($days));
+    }
+
+    public function scopePaused($query): Builder
+    {
+        return $query->where('status', SubscriptionStatus::Paused->value);
+    }
+
+    /**
+     * Prune expired subscriptions.
+     */
+    public function prunable(): Builder
+    {
+        $keepDays = config('subscription.prune_after_days', 90);
+
+        return static::where('status', SubscriptionStatus::Expired->value)
+            ->where('updated_at', '<=', Carbon::now()->subDays($keepDays));
     }
 }

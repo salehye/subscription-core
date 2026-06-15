@@ -157,6 +157,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Pruning
+    |--------------------------------------------------------------------------
+    |
+    | Number of days after a subscription is expired before it is pruned
+    | from the database. Requires the model to use the Prunable trait.
+    |
+    */
+
+    'prune_after_days' => env('SUBSCRIPTION_PRUNE_AFTER_DAYS', 90),
+
+    /*
+    |--------------------------------------------------------------------------
     | Event Discovery
     |--------------------------------------------------------------------------
     |

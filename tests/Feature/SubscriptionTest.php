@@ -10,6 +10,8 @@ use Salehye\Subscription\Enums\SubscriptionStatus;
 use Salehye\Subscription\Events\PlanChanged;
 use Salehye\Subscription\Events\SubscriptionCancelled;
 use Salehye\Subscription\Events\SubscriptionExpired;
+use Salehye\Subscription\Events\SubscriptionPaused;
+use Salehye\Subscription\Events\SubscriptionResumed;
 use Salehye\Subscription\Events\SubscriptionStarted;
 use Salehye\Subscription\Models\Feature;
 use Salehye\Subscription\Models\Plan;
@@ -278,5 +280,110 @@ class SubscriptionTest extends TestCase
         $addon->refresh();
 
         $this->assertEquals(SubscriptionStatus::Canceled->value, $addon->status);
+    }
+
+    public function test_can_pause_active_subscription(): void
+    {
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        $paused = \Salehye\Subscription\Facades\Subscription::pause($subscription);
+
+        $this->assertTrue($paused->isPaused());
+        $this->assertEquals(SubscriptionStatus::Paused->value, $paused->status);
+    }
+
+    public function test_can_resume_paused_subscription(): void
+    {
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        \Salehye\Subscription\Facades\Subscription::pause($subscription);
+        $subscription->refresh();
+
+        $resumed = \Salehye\Subscription\Facades\Subscription::resume($subscription);
+
+        $this->assertEquals(SubscriptionStatus::Active->value, $resumed->status);
+        $this->assertFalse($resumed->isPaused());
+    }
+
+    public function test_paused_subscription_has_paused_status(): void
+    {
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        \Salehye\Subscription\Facades\Subscription::pause($subscription);
+        $subscription->refresh();
+
+        $this->assertTrue($subscription->isPaused());
+        $this->assertEquals(SubscriptionStatus::Paused->value, $subscription->status);
+    }
+
+    public function test_subscription_paused_event_dispatched(): void
+    {
+        \Illuminate\Support\Facades\Event::fake();
+
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        \Salehye\Subscription\Facades\Subscription::pause($subscription);
+
+        \Illuminate\Support\Facades\Event::assertDispatched(SubscriptionPaused::class);
+    }
+
+    public function test_subscription_resumed_event_dispatched(): void
+    {
+        \Illuminate\Support\Facades\Event::fake();
+
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        \Salehye\Subscription\Facades\Subscription::pause($subscription);
+        \Salehye\Subscription\Facades\Subscription::resume($subscription->fresh());
+
+        \Illuminate\Support\Facades\Event::assertDispatched(SubscriptionResumed::class);
+    }
+
+    public function test_paused_subscription_in_active_scope(): void
+    {
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        \Salehye\Subscription\Facades\Subscription::pause($subscription);
+
+        // Paused subscriptions should still be in the 'active' scope
+        $activeSubscriptions = Subscription::active()->get();
+        $this->assertTrue($activeSubscriptions->contains('id', $subscription->id));
+    }
+
+    public function test_can_resume_from_facade(): void
+    {
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        \Salehye\Subscription\Facades\Subscription::pause($subscription);
+        $subscription->refresh();
+
+        $this->assertTrue($subscription->isPaused());
+
+        \Salehye\Subscription\Facades\Subscription::resume($subscription->fresh());
+        $subscription->refresh();
+
+        $this->assertTrue($subscription->isActive());
+    }
+
+    public function test_paused_scope_returns_only_paused(): void
+    {
+        $user = $this->createUser();
+        $subscription = $user->subscribeTo($this->plan);
+
+        // Create another subscription and pause it
+        $user2 = $this->createUser(['email' => 'test2@example.com']);
+        $subscription2 = $user2->subscribeTo($this->plan);
+        \Salehye\Subscription\Facades\Subscription::pause($subscription2);
+
+        $pausedSubscriptions = Subscription::paused()->get();
+
+        $this->assertTrue($pausedSubscriptions->contains('id', $subscription2->id));
     }
 }
