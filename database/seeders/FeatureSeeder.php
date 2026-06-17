@@ -12,110 +12,43 @@ class FeatureSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create features
-        $maxUsers = Feature::query()->create([
-            'name' => 'Max Users',
-            'slug' => 'max_users',
-            'type' => 'limit',
-            'description' => 'Maximum number of users allowed.',
-        ]);
+        $features = config('subscription_seeder.features', []);
+        $planFeatures = config('subscription_seeder.plan_features', []);
 
-        $maxStorage = Feature::query()->create([
-            'name' => 'Max Storage (MB)',
-            'slug' => 'max_storage',
-            'type' => 'consumable',
-            'description' => 'Maximum storage space in megabytes.',
-        ]);
+        $featureIds = [];
 
-        $apiAccess = Feature::query()->create([
-            'name' => 'API Access',
-            'slug' => 'api_access',
-            'type' => 'toggle',
-            'description' => 'Enable or disable API access.',
-        ]);
+        foreach ($features as $featureData) {
+            $feature = Feature::query()->updateOrCreate(
+                ['slug' => $featureData['slug']],
+                [
+                    'name' => $featureData['name'],
+                    'type' => $featureData['type'],
+                    'description' => $featureData['description'] ?? null,
+                    'metadata' => $featureData['metadata'] ?? null,
+                ],
+            );
 
-        $advancedReports = Feature::query()->create([
-            'name' => 'Advanced Reports',
-            'slug' => 'advanced_reports',
-            'type' => 'toggle',
-            'description' => 'Access to advanced reporting features.',
-        ]);
+            $featureIds[$featureData['slug']] = $feature->id;
+        }
 
-        $prioritySupport = Feature::query()->create([
-            'name' => 'Priority Support',
-            'slug' => 'priority_support',
-            'type' => 'toggle',
-            'description' => 'Priority customer support access.',
-        ]);
+        foreach ($planFeatures as $planSlug => $featureValues) {
+            $plan = Plan::query()->where('slug', $planSlug)->first();
 
-        $maxProjects = Feature::query()->create([
-            'name' => 'Max Projects',
-            'slug' => 'max_projects',
-            'type' => 'limit',
-            'description' => 'Maximum number of projects allowed.',
-        ]);
+            if (!$plan) {
+                continue;
+            }
 
-        $monthlyEmails = Feature::query()->create([
-            'name' => 'Monthly Emails',
-            'slug' => 'monthly_emails',
-            'type' => 'consumable',
-            'description' => 'Number of emails that can be sent per month.',
-        ]);
+            $syncData = [];
 
-        // Assign features to plans
-        $free = Plan::query()->where('slug', 'free')->first();
-        $free?->features()->attach([
-            $maxUsers->id => ['value' => '3'],
-            $maxStorage->id => ['value' => '100'],
-            $apiAccess->id => ['value' => 'false'],
-            $advancedReports->id => ['value' => 'false'],
-            $prioritySupport->id => ['value' => 'false'],
-            $maxProjects->id => ['value' => '1'],
-            $monthlyEmails->id => ['value' => '100'],
-        ]);
+            foreach ($featureValues as $featureSlug => $value) {
+                if (!isset($featureIds[$featureSlug])) {
+                    continue;
+                }
 
-        $basic = Plan::query()->where('slug', 'basic')->first();
-        $basic?->features()->attach([
-            $maxUsers->id => ['value' => '10'],
-            $maxStorage->id => ['value' => '1000'],
-            $apiAccess->id => ['value' => 'true'],
-            $advancedReports->id => ['value' => 'false'],
-            $prioritySupport->id => ['value' => 'false'],
-            $maxProjects->id => ['value' => '5'],
-            $monthlyEmails->id => ['value' => '5000'],
-        ]);
+                $syncData[$featureIds[$featureSlug]] = ['value' => $value];
+            }
 
-        $pro = Plan::query()->where('slug', 'pro')->first();
-        $pro?->features()->attach([
-            $maxUsers->id => ['value' => '50'],
-            $maxStorage->id => ['value' => '10000'],
-            $apiAccess->id => ['value' => 'true'],
-            $advancedReports->id => ['value' => 'true'],
-            $prioritySupport->id => ['value' => 'false'],
-            $maxProjects->id => ['value' => 'unlimited'],
-            $monthlyEmails->id => ['value' => '50000'],
-        ]);
-
-        $enterprise = Plan::query()->where('slug', 'enterprise')->first();
-        $enterprise?->features()->attach([
-            $maxUsers->id => ['value' => 'unlimited'],
-            $maxStorage->id => ['value' => 'unlimited'],
-            $apiAccess->id => ['value' => 'true'],
-            $advancedReports->id => ['value' => 'true'],
-            $prioritySupport->id => ['value' => 'true'],
-            $maxProjects->id => ['value' => 'unlimited'],
-            $monthlyEmails->id => ['value' => 'unlimited'],
-        ]);
-
-        // Add-on plan features
-        $extraStorage = Plan::query()->where('slug', 'extra-storage-10gb')->first();
-        $extraStorage?->features()->attach([
-            $maxStorage->id => ['value' => '10240'], // 10GB in MB
-        ]);
-
-        $premiumSupport = Plan::query()->where('slug', 'premium-support')->first();
-        $premiumSupport?->features()->attach([
-            $prioritySupport->id => ['value' => 'true'],
-        ]);
+            $plan->features()->sync($syncData);
+        }
     }
 }
